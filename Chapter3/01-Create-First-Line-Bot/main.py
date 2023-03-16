@@ -45,5 +45,10 @@ def handle_message(event):
         TextSendMessage(text=event.message.text))
 
 
+@app.route("/", methods=['GET'])
+def home():
+    return 'Hello World!'
+
+
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0', port=5000)
