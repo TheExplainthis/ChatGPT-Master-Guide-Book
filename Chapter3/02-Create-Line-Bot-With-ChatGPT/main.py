@@ -46,11 +46,12 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    global messages
     if event.message.text.startswith('/清除'):
         messages = [{
             'role': 'system', 'content': os.getenv('OPENAI_SYSTEM_MESSAGE')
         }]
-        response = '歷史紀錄清除成功'
+        content = '歷史紀錄清除成功'
     else:
         messages.append({
             'role': 'user', 'content': event.message.text
@@ -60,13 +61,15 @@ def handle_message(event):
             messages=messages
         )
         role = response['choices'][0]['message']['role']
-        content = response['choices'][0]['message']['content']
+        content = response['choices'][0]['message']['content'].strip()
         messages.append({
             'role': role, 'content': content
         })
+        if len(messages) >= 7:
+            messages = [messages[0]] + messages[-4:]
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text=response))
+        TextSendMessage(text=content))
 
 
 @app.route("/", methods=['GET'])
