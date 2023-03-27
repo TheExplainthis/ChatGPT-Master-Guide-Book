@@ -10,6 +10,7 @@ from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
 )
 from dotenv import load_dotenv
+import openai
 import os
 load_dotenv()
 
@@ -17,6 +18,11 @@ app = Flask(__name__)
 
 line_bot_api = LineBotApi(os.getenv('LINE_CHANNEL_ACCESS_TOKEN'))
 handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET'))
+openai.api_key = os.getenv('OPENAI_API_TOKEN')
+
+messages = [{
+    'role': 'system', 'content': os.getenv('OPENAI_SYSTEM_MESSAGE')
+}]
 
 
 @app.route("/callback", methods=['POST'])
@@ -40,10 +46,36 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    global messages
+    if event.message.text.startswith('/清除'):
+        messages = [{
+            'role': 'system', 'content': os.getenv('OPENAI_SYSTEM_MESSAGE')
+        }]
+        content = '歷史紀錄清除成功'
+    else:
+        messages.append({
+            'role': 'user', 'content': event.message.text
+        })
+        response = openai.ChatCompletion.create(
+            model=os.getenv('OPENAI_MODEL_ENGINE'),
+            messages=messages
+        )
+        role = response['choices'][0]['message']['role']
+        content = response['choices'][0]['message']['content'].strip()
+        messages.append({
+            'role': role, 'content': content
+        })
+        if len(messages) >= 7:
+            messages = [messages[0]] + messages[-4:]
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text=event.message.text))
+        TextSendMessage(text=content))
+
+
+@app.route("/", methods=['GET'])
+def home():
+    return 'Hello World!'
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0', port=5000)
