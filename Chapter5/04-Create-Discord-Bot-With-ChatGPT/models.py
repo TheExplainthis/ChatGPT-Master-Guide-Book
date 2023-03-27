@@ -18,6 +18,8 @@ class OpenAIModel(ModelInterface):
                 model=self.model_engine,
                 messages=messages
             )
-            return True, response
+            role = response['choices'][0]['message']['role']
+            content = response['choices'][0]['message']['content'].strip()
+            return role, content
         except Exception as e:
-            return False, str(e)
+            raise e
