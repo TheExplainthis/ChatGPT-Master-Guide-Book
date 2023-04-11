@@ -1,0 +1,5 @@
+line-bot-sdk==2.4.1
+Flask==2.2.3
+python-dotenv==0.21.1
+openai==0.27.0
+google-cloud-texttospeech==2.14.1
